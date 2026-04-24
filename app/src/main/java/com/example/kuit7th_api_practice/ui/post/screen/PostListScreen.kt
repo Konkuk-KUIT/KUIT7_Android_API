@@ -33,7 +33,7 @@ fun PostListScreen(
     onPostClick: (Long) -> Unit,
     onCreatePostClick: () -> Unit
 ) {
-    // TODO: 실습에서 이 샘플 상태를 ViewModel의 uiState로 교체해보세요.
+    // TODO: 실습에서 이 샘플 상태를 ViewModel의 uiState로 교체
     val uiState: PostListUiState = PostListUiState.Success(PostPracticeSampleData.posts)
 
     Scaffold(

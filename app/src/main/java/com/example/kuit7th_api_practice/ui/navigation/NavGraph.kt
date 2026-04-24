@@ -15,8 +15,8 @@ fun NavGraph(
     navController: NavHostController,
     startDestination: Any = PostListRoute
 ) {
-    // TODO: 실습에서 공용 PostViewModel을 만들고
-    // 각 Screen에 같은 ViewModel 인스턴스를 전달해보세요.
+    // TODO: 공용 PostViewModel을 만들기
+    // 각 Screen에 같은 ViewModel 인스턴스를 전달해보세요
     NavHost(
         navController = navController,
         startDestination = startDestination

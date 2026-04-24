@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 
 @Singleton
 class InMemoryMockPostDataSource @Inject constructor() : PostLocalDataSource {
-
+    // 서버 연동 없이 레포지토리 구현 위한 코드
     private val posts = mutableListOf(
         PostResponse(
             id = 1L,

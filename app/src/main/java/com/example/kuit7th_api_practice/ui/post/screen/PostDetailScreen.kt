@@ -55,7 +55,7 @@ fun PostDetailScreen(
     onNavigateBack: () -> Unit,
     onEditClick: (Long) -> Unit
 ) {
-    // TODO: 실습에서 ViewModel의 상세 상태로 교체해보세요.
+    // TODO: 실습에서 ViewModel의 상세 상태로 교체
     val uiState: PostDetailUiState = PostDetailUiState.Success(PostPracticeSampleData.findPost(postId))
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -204,7 +204,7 @@ fun PostDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: 실습에서 deletePost()와 연결해보세요.
+                        // TODO: 실습에서 deletePost()와 연결
                         showDeleteDialog = false
                         onNavigateBack()
                     }

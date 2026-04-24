@@ -57,7 +57,7 @@ fun PostCreateScreen(
     onNavigateBack: () -> Unit,
     onPostCreated: () -> Unit
 ) {
-    // TODO: 실습에서 아래 local state를 ViewModel의 FormState로 교체해보세요.
+    // TODO: 아래 local state를 ViewModel의 FormState로 교체
     var author by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -219,7 +219,7 @@ fun PostCreateScreen(
 
             Button(
                 onClick = {
-                    // TODO: 실습에서 createPost()와 연결하고 작성 성공 시 뒤로 가기를 처리해보세요.
+                    // TODO: createPost()와 연결하고 작성 성공 시 뒤로 가기를 처리
                     onPostCreated()
                 },
                 modifier = Modifier

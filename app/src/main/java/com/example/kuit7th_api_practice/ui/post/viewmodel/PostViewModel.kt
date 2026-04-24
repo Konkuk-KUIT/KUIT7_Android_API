@@ -11,7 +11,6 @@ class PostViewModel @Inject constructor(
 ) : ViewModel() {
 
     // TODO: 목록 화면 상태 만들기
-    // 예) var postListUiState by mutableStateOf<PostListUiState>(...)
 
     // TODO: 상세 화면 상태 만들기
 

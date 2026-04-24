@@ -57,7 +57,7 @@ fun PostEditScreen(
 ) {
     val post = PostPracticeSampleData.findPost(postId)
 
-    // TODO: 실습에서 아래 local state를 ViewModel의 수정 폼 상태로 교체해보세요.
+    // TODO: 아래 local state를 ViewModel의 수정 폼 상태로 교체
     var title by remember { mutableStateOf(post.title) }
     var content by remember { mutableStateOf(post.content) }
     var originalImageUrl by remember { mutableStateOf(post.imageUrl) }
