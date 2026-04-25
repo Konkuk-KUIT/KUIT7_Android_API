@@ -38,19 +38,6 @@ class InMemoryMockPostDataSource @Inject constructor() : PostLocalDataSource {
             ),
             createdAt = "2026-04-25T10:15:00",
             updatedAt = "2026-04-25T10:15:00"
-        ),
-        PostResponse(
-            id = 3L,
-            title = "미션 전용으로 남겨둘 부분 생각해보기",
-            content = "수정, 삭제 기능과 상태 처리를 미션으로 분리하면 실습 난이도 조절이 자연스럽습니다.",
-            imageUrl = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80",
-            author = AuthorResponse(
-                id = 3L,
-                username = "part_leader",
-                profileImageUrl = null
-            ),
-            createdAt = "2026-04-25T11:00:00",
-            updatedAt = "2026-04-25T11:00:00"
         )
     )
 

@@ -204,7 +204,7 @@ fun PostDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: 실습에서 deletePost()와 연결
+                        // TODO: deletePost()와 연결
                         showDeleteDialog = false
                         onNavigateBack()
                     }
