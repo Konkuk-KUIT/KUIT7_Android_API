@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +54,8 @@ import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 fun PostEditScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onPostUpdated: () -> Unit
+    onPostUpdated: () -> Unit,
+    viewModel: PostViewModel
 ) {
     val post = PostPracticeSampleData.findPost(postId)
 
@@ -207,17 +209,5 @@ fun PostEditScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostEditScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostEditScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onPostUpdated = {}
-        )
     }
 }
