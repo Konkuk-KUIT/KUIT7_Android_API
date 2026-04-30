@@ -47,15 +47,24 @@ import coil.compose.AsyncImage
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 import com.example.kuit7th_api_practice.util.formatDateTime
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onEditClick: (Long) -> Unit
+    onEditClick: (Long) -> Unit,
+    viewModel: PostViewModel = hiltViewModel()  // 추가
 ) {
-    // TODO: 실습에서 ViewModel의 상세 상태로 교체
+    val uiState by viewModel.detailUiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(postId) {
+        viewModel.getPostDetail(postId)
+    }
     val uiState: PostDetailUiState = PostDetailUiState.Success(PostPracticeSampleData.findPost(postId))
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -204,7 +213,7 @@ fun PostDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: deletePost()와 연결
+                        viewModel.deletePost(postId) {
                         showDeleteDialog = false
                         onNavigateBack()
                     }
