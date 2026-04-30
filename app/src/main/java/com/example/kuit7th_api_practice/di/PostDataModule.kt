@@ -12,7 +12,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class PostDataModule {
 
-    @Binds
+    @Binds      //구현체(InMemoryMockPostDataSource)를 인터페이스(PostLocalDataSource)와 연결하는 역할
     @Singleton
     abstract fun bindPostLocalDataSource(
         dataSource: InMemoryMockPostDataSource
