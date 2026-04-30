@@ -58,6 +58,7 @@ fun PostDetailScreen(
     onEditClick: (Long) -> Unit,
     viewModel: PostViewModel
 ) {
+    // TODO: 실습에서 ViewModel의 상세 상태로 교체
     val uiState = viewModel.postDetailUiState
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -202,6 +203,7 @@ fun PostDetailScreen(
         }
     }
 
+    // 게시글 삭제 시 dialog 띄움
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -211,8 +213,10 @@ fun PostDetailScreen(
                 TextButton(
                     onClick = {
                         // TODO: deletePost()와 연결
-                        showDeleteDialog = false
-                        onNavigateBack()
+                        viewModel.deletePost(postId) {
+                            showDeleteDialog = false
+                            onNavigateBack()
+                        }
                     }
                 ) {
                     Text("삭제")

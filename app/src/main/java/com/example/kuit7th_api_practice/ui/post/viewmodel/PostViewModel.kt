@@ -1,12 +1,15 @@
 package com.example.kuit7th_api_practice.ui.post.viewmodel
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kuit7th_api_practice.data.mock.PostLocalDataSource
+import com.example.kuit7th_api_practice.data.model.request.PostCreateRequest
 import com.example.kuit7th_api_practice.ui.post.state.PostCreateFormState
+import com.example.kuit7th_api_practice.ui.post.state.PostCreateUiState
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
 import com.example.kuit7th_api_practice.ui.post.state.PostEditFormState
 import com.example.kuit7th_api_practice.ui.post.state.PostEditUiState
@@ -14,21 +17,23 @@ import com.example.kuit7th_api_practice.ui.post.state.PostListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.runCatching
 
 @HiltViewModel
 class PostViewModel @Inject constructor(
     private val postLocalDataSource: PostLocalDataSource
 ) : ViewModel() {
-
     // TODO: 목록 화면 상태 만들기
     var postListUiState by mutableStateOf<PostListUiState>(PostListUiState.Loading)
         private set
     var postDetailUiState by mutableStateOf<PostDetailUiState>(PostDetailUiState.Loading)
         private set
+    var postCreateUiState by mutableStateOf<PostCreateUiState>(PostCreateUiState.Idle)
+        private set
     var postEditUiState by mutableStateOf<PostEditUiState>(PostEditUiState.Loading)
         private set
 
-    var postCreateFromState by mutableStateOf(PostCreateFormState())
+    var postCreateFormState by mutableStateOf(PostCreateFormState())
         private set
     var postEditFormState by mutableStateOf(PostEditFormState())
         private set
@@ -92,7 +97,118 @@ class PostViewModel @Inject constructor(
             initializedPostId = postId
         )
     }
+
     // TODO: createPost(), updatePost(), deletePost() 구현하기
+    fun createPost(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            isUploading = true
+            postCreateUiState = PostCreateUiState.Saving
+
+            runCatching {
+                val author = postCreateFormState.author
+                val request = PostCreateRequest(
+                    title = postCreateFormState.title,
+                    content = postCreateFormState.content,
+                    imageUrl = postCreateFormState.selectedImageUri
+                )
+                postLocalDataSource.createPost(author, request)
+            }.onSuccess { post ->
+                postCreateUiState = PostCreateUiState.Success(post)
+                postCreateFormState = PostCreateFormState()
+                getPosts()
+                onSuccess()
+            }.onFailure { error ->
+                val message = error.message ?: "게시글을 생성할 수 없습니다."
+                postCreateUiState = PostCreateUiState.Error(message)
+            }
+            postCreateUiState = PostCreateUiState.Idle
+            isUploading = false
+        }
+    }
+
+    fun updatePost(postId: Long, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            isUploading = true
+            postEditUiState = PostEditUiState.Saving
+
+            runCatching {
+                val request = PostCreateRequest(
+                    title = postEditFormState.title,
+                    content = postEditFormState.content,
+                    imageUrl = postEditFormState.selectedImageUri
+                        ?: postEditFormState.originalImageUrl
+                )
+                postLocalDataSource.updatePost(postId, request)
+            }.onSuccess { post ->
+                if (post == null) {
+                    postEditUiState = PostEditUiState.Error("게시글 수정에 실패했습니다.")
+                } else {
+                    postEditUiState = PostEditUiState.Success(post)
+                    getPosts()
+                    onSuccess()
+                }
+            }.onFailure { error ->
+                val message = error.message ?: "게시글 수정 중 오류가 발생했습니다."
+                postEditUiState = PostEditUiState.Error(message)
+            }
+            postEditUiState = PostEditUiState.Loading
+            isUploading = false
+        }
+    }
+
+    fun deletePost(postId: Long, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            runCatching {
+                postLocalDataSource.deletePost(postId)
+            }.onSuccess {
+                getPosts()
+                onSuccess()
+            }.onFailure {
+
+            }
+        }
+    }
+
+    // 게시글 생성 창에서 변수 최신화
+    fun onUpdateAuthor(author: String) {
+        postCreateFormState = postCreateFormState.copy(author = author)
+    }
+
+    fun onUpdateTitle(title: String) {
+        postCreateFormState = postCreateFormState.copy(title = title)
+    }
+
+    fun onUpdateContent(content: String) {
+        postCreateFormState = postCreateFormState.copy(content = content)
+    }
+
+    fun onUpdateSelectedImageUri(selectedImageUri: Uri?) {
+        postCreateFormState =
+            postCreateFormState.copy(selectedImageUri = selectedImageUri?.toString())
+    }
+
+    // 게시글 수정 창에서 변수 최신화
+    fun onUpdateEditTitle(title: String) {
+        postEditFormState = postEditFormState.copy(title = title)
+    }
+
+    fun onUpdateEditContent(content: String) {
+        postEditFormState = postEditFormState.copy(content = content)
+    }
 
     // TODO: 이미지 선택 상태 처리 함수 만들기
+    fun onUpdateEditSelectedImageUri(selectedImageUri: Uri?) {
+        postEditFormState = postEditFormState.copy(
+            selectedImageUri = selectedImageUri?.toString(),
+            originalImageUrl = if (selectedImageUri != null) null else postEditFormState.originalImageUrl
+        )
+    }
+
+    // 게시글 수정 창에서 업로드 이미지 삭제 시
+    fun onClearEditImages() {
+        postEditFormState = postEditFormState.copy(
+            originalImageUrl = null,
+            selectedImageUri = null
+        )
+    }
 }
