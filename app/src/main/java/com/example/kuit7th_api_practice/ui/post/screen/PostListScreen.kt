@@ -26,15 +26,23 @@ import androidx.compose.ui.unit.dp
 import com.example.kuit7th_api_practice.ui.post.component.PostItem
 import com.example.kuit7th_api_practice.ui.post.state.PostListUiState
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostListScreen(
     onPostClick: (Long) -> Unit,
-    onCreatePostClick: () -> Unit
+    onCreatePostClick: () -> Unit,
+    viewModel: PostViewModel = hiltViewModel()  //  "PostViewModel을 받는데, 안 주면 hiltViewModel() 함수로 자동으로 가져와라"
 ) {
-    // TODO: 실습에서 이 샘플 상태를 ViewModel의 uiState로 교체
-    val uiState: PostListUiState = PostListUiState.Success(PostPracticeSampleData.posts)
+    LaunchedEffect(Unit) {
+        viewModel.getPosts()
+    }
+    val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
