@@ -5,17 +5,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.kuit7th_api_practice.ui.post.state.PostEditUiState
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,21 +51,21 @@ import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 fun PostEditScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onPostUpdated: () -> Unit
+    onPostUpdated: () -> Unit,
+    viewModel: PostViewModel
 ) {
-    val post = PostPracticeSampleData.findPost(postId)
+    var uiState = viewModel.postEditUiState
 
-    // TODO: 아래 local state를 ViewModel의 수정 폼 상태로 교체
-    var title by remember { mutableStateOf(post.title) }
-    var content by remember { mutableStateOf(post.content) }
-    var originalImageUrl by remember { mutableStateOf(post.imageUrl) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    var title = viewModel.postEditFormState.title
+    var content = viewModel.postEditFormState.content
+    var originalImageUrl = viewModel.postEditFormState.originalImageUrl
+    var selectedImageUri = viewModel.postEditFormState.selectedImageUri
+    var isUploading = viewModel.isUploading
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        viewModel.onEditImageChange(uri?.toString())
     }
 
     Scaffold(
@@ -97,7 +95,7 @@ fun PostEditScreen(
         ) {
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { viewModel.onEditTitleChange(it) },
                 label = { Text("제목") },
                 placeholder = { Text("제목을 입력해주세요.") },
                 modifier = Modifier.fillMaxWidth(),
@@ -113,7 +111,7 @@ fun PostEditScreen(
 
             OutlinedTextField(
                 value = content,
-                onValueChange = { content = it },
+                onValueChange = { viewModel.onEditContentChange(it) },
                 label = { Text("내용") },
                 placeholder = { Text("내용을 입력해주세요.") },
                 modifier = Modifier
@@ -192,7 +190,10 @@ fun PostEditScreen(
 
             Button(
                 onClick = {
-                    // TODO: 실습에서 updatePost()와 연결하고 성공 시 뒤로 가기를 처리해보세요.
+                    viewModel.updatePost(postId)
+                    if (uiState is PostEditUiState.Success){
+                        onNavigateBack()
+                    }
                     onPostUpdated()
                 },
                 modifier = Modifier
@@ -207,17 +208,5 @@ fun PostEditScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostEditScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostEditScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onPostUpdated = {}
-        )
     }
 }

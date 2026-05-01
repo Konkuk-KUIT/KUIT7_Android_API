@@ -49,25 +49,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.kuit7th_api_practice.ui.post.state.PostCreateUiState
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostCreateScreen(
     onNavigateBack: () -> Unit,
-    onPostCreated: () -> Unit
+    onPostCreated: () -> Unit,
+    viewModel: PostViewModel
 ) {
     // TODO: 아래 local state를 ViewModel의 FormState로 교체
-    var author by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    val uiState = viewModel.postCreateUiState
+    val author = viewModel.postCreateFormState.author
+    val title = viewModel.postCreateFormState.title
+    val content = viewModel.postCreateFormState.content
+    var selectedImageUri = viewModel.postCreateFormState.selectedImageUri
+    val isUploading = viewModel.isUploading
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        viewModel.onEditImageChange(uri?.toString())
     }
 
     Scaffold(
@@ -100,7 +104,7 @@ fun PostCreateScreen(
         ) {
             OutlinedTextField(
                 value = author,
-                onValueChange = { author = it },
+                onValueChange = { viewModel.onCreateAuthorChange(it) },
                 label = { Text("작성자") },
                 placeholder = { Text("anonymous") },
                 modifier = Modifier.fillMaxWidth(),
@@ -113,7 +117,7 @@ fun PostCreateScreen(
 
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { viewModel.onCreateTitleChange(it) },
                 label = { Text("제목") },
                 placeholder = { Text("제목을 입력해주세요.") },
                 modifier = Modifier.fillMaxWidth(),
@@ -126,7 +130,7 @@ fun PostCreateScreen(
 
             OutlinedTextField(
                 value = content,
-                onValueChange = { content = it },
+                onValueChange = { viewModel.onCreateContentChange(it) },
                 label = { Text("내용") },
                 placeholder = { Text("내용을 입력해주세요.") },
                 modifier = Modifier
@@ -219,7 +223,10 @@ fun PostCreateScreen(
 
             Button(
                 onClick = {
-                    // TODO: createPost()와 연결하고 작성 성공 시 뒤로 가기를 처리
+                    viewModel.createPost()
+                    if (uiState is PostCreateUiState.Success){
+                        onNavigateBack()
+                    }
                     onPostCreated()
                 },
                 modifier = Modifier
@@ -244,13 +251,4 @@ private fun outlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedBorderColor = MaterialTheme.colorScheme.outline
 )
 
-@Preview(showBackground = true)
-@Composable
-private fun PostCreateScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostCreateScreen(
-            onNavigateBack = {},
-            onPostCreated = {}
-        )
-    }
-}
+
