@@ -5,17 +5,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,39 +31,37 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostEditScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onPostUpdated: () -> Unit
+    onPostUpdated: () -> Unit,
+    viewModel: PostViewModel
 ) {
-    val post = PostPracticeSampleData.findPost(postId)
+    val title = viewModel.postEditFormState.title
+    val content = viewModel.postEditFormState.content
+    val originalImageUrl = viewModel.postEditFormState.originalImageUrl
+    val selectedImageUri = viewModel.postEditFormState.selectedImageUri
+    val isUploading = viewModel.isUploading
 
-    // TODO: 아래 local state를 ViewModel의 수정 폼 상태로 교체
-    var title by remember { mutableStateOf(post.title) }
-    var content by remember { mutableStateOf(post.content) }
-    var originalImageUrl by remember { mutableStateOf(post.imageUrl) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    LaunchedEffect(postId) {
+        viewModel.getPostDetail(postId)
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        viewModel.onEditImageSelected(uri)
     }
 
     Scaffold(
@@ -97,7 +91,7 @@ fun PostEditScreen(
         ) {
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { viewModel.updateEditTitle(it) },
                 label = { Text("제목") },
                 placeholder = { Text("제목을 입력해주세요.") },
                 modifier = Modifier.fillMaxWidth(),
@@ -113,7 +107,7 @@ fun PostEditScreen(
 
             OutlinedTextField(
                 value = content,
-                onValueChange = { content = it },
+                onValueChange = { viewModel.updateEditContent(it) },
                 label = { Text("내용") },
                 placeholder = { Text("내용을 입력해주세요.") },
                 modifier = Modifier
@@ -158,10 +152,7 @@ fun PostEditScreen(
                         contentScale = ContentScale.Crop
                     )
                     IconButton(
-                        onClick = {
-                            originalImageUrl = null
-                            selectedImageUri = null
-                        },
+                        onClick = { viewModel.clearEditImage() },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
@@ -192,8 +183,7 @@ fun PostEditScreen(
 
             Button(
                 onClick = {
-                    // TODO: 실습에서 updatePost()와 연결하고 성공 시 뒤로 가기를 처리해보세요.
-                    onPostUpdated()
+                    viewModel.updatePost(postId, onPostUpdated)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -207,17 +197,5 @@ fun PostEditScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostEditScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostEditScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onPostUpdated = {}
-        )
     }
 }
