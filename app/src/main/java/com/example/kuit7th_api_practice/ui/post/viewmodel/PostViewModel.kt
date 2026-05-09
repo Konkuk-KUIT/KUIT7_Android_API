@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kuit7th_api_practice.data.mock.PostLocalDataSource
 import com.example.kuit7th_api_practice.data.model.request.PostCreateRequest
+import com.example.kuit7th_api_practice.data.repository.FavoriteRepository
+import com.example.kuit7th_api_practice.data.repository.temporarySaveRepository
 import com.example.kuit7th_api_practice.ui.post.state.PostCreateFormState
 import com.example.kuit7th_api_practice.ui.post.state.PostCreateUiState
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
@@ -20,7 +22,9 @@ import kotlin.runCatching
 
 @HiltViewModel      //hilt가 이 뷰모델 생성 및 생성자에 있는 의존성 자동주입
 class PostViewModel @Inject constructor(
-    private val postLocalDataSource: PostLocalDataSource
+    private val postLocalDataSource: PostLocalDataSource,
+    private val favoriteRepository: FavoriteRepository,
+    private val temporarySaveRepository: temporarySaveRepository//hilt가 postdatamodule로부터 주입
 ) : ViewModel() {
 
     // TODO: 목록 화면 상태 만들기
@@ -48,6 +52,12 @@ class PostViewModel @Inject constructor(
     var isUploading by mutableStateOf(false)
         private set
 
+    init{//뷰모델이 처음 만들어질때 실행됨
+        viewModelScope.launch{
+            postCreateFormState=temporarySaveRepository.getForm()
+        }
+    }
+
     // TODO: getPosts(), getPostDetail() 구현하기
     fun getPosts() {        //게시글 목록 갱신
         viewModelScope.launch {      //코루틴 실행
@@ -55,6 +65,12 @@ class PostViewModel @Inject constructor(
             runCatching {
                 postLocalDataSource.getPosts()      //repository에 데이터 요청
             }.onSuccess { posts ->
+                val map=favoriteRepository.getFavorites(posts)
+
+                map.forEach { key, value ->
+                    posts.find{it.id==key}?.isFavorite=value
+                }
+
                 postListUiState = PostListUiState.Success(posts)
             }.onFailure { error ->
                 postListUiState = PostListUiState.Error(
@@ -87,6 +103,14 @@ class PostViewModel @Inject constructor(
                 postDetailUiState = PostDetailUiState.Error(message)
                 postEditUiState = PostEditUiState.Error(message)
             }
+        }
+    }
+
+    fun onFavoriteClick(postId:Long){
+        viewModelScope.launch{
+            favoriteRepository.setFavorite(postId)
+
+            getPosts()
         }
     }
 
@@ -126,6 +150,7 @@ class PostViewModel @Inject constructor(
             }.onSuccess { post ->
                 postCreateUiState = PostCreateUiState.Success(post)
                 postCreateFormState = PostCreateFormState()
+                temporarySaveRepository.clearForm()
             }.onFailure { error ->
                 postCreateUiState = PostCreateUiState.Error(
                     error.message ?: "게시글 작성에 실패했습니다."
@@ -196,14 +221,23 @@ class PostViewModel @Inject constructor(
 
     fun changeCreateAuthor(author: String) {
         postCreateFormState = postCreateFormState.copy(author = author)
+        viewModelScope.launch{
+            temporarySaveRepository.saveForm(postCreateFormState)
+        }
     }
 
     fun changeCreateTitle(title: String) {
         postCreateFormState = postCreateFormState.copy(title = title)
+        viewModelScope.launch{
+            temporarySaveRepository.saveForm(postCreateFormState)
+        }
     }
 
     fun changeCreateContent(content: String) {
         postCreateFormState = postCreateFormState.copy(content = content)
+        viewModelScope.launch{
+            temporarySaveRepository.saveForm(postCreateFormState)
+        }
     }
 
     fun changeEditSImageUri(uri: String?) {
