@@ -91,7 +91,8 @@ fun PostListScreen(
                     items(uiState.posts, key = { it.id }) { post ->
                         PostItem(
                             post = post,
-                            onClick = { onPostClick(post.id) }
+                            onClick = { onPostClick(post.id) },
+                            onFavoriteClick = {viewModel.onFavoriteClick(post.id)}
                         )
                     }
                 }

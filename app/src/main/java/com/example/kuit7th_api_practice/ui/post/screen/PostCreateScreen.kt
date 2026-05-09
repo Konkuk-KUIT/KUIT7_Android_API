@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -221,13 +222,16 @@ fun PostCreateScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            LaunchedEffect(uiState) {
+                if (uiState is PostCreateUiState.Success) {
+                    onNavigateBack()
+                    onPostCreated()
+                }
+            }
+
             Button(
                 onClick = {
                     viewModel.createPost()
-                    if (uiState is PostCreateUiState.Success){
-                        onNavigateBack()
-                    }
-                    onPostCreated()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -1,17 +1,14 @@
 package com.example.kuit7th_api_practice.ui.post.viewmodel
 
-import android.R.id.message
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kuit7th_api_practice.data.mock.PostLocalDataSource
 import com.example.kuit7th_api_practice.data.model.request.PostCreateRequest
-import com.example.kuit7th_api_practice.data.model.response.AuthorResponse
-import com.example.kuit7th_api_practice.data.model.response.PostResponse
-import com.example.kuit7th_api_practice.ui.post.screen.PostPracticeSampleData.posts
+import com.example.kuit7th_api_practice.data.repository.FavoriteRepository
+import com.example.kuit7th_api_practice.data.repository.PostDraftRepository
 import com.example.kuit7th_api_practice.ui.post.state.PostCreateFormState
 import com.example.kuit7th_api_practice.ui.post.state.PostCreateUiState
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
@@ -19,12 +16,15 @@ import com.example.kuit7th_api_practice.ui.post.state.PostEditFormState
 import com.example.kuit7th_api_practice.ui.post.state.PostEditUiState
 import com.example.kuit7th_api_practice.ui.post.state.PostListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PostViewModel @Inject constructor(
-    private val postLocalDataSource: PostLocalDataSource
+    private val postLocalDataSource: PostLocalDataSource,
+    private val favoriteRepository: FavoriteRepository,
+    private val postDraftRepository: PostDraftRepository
 ) : ViewModel() {
 
     var postListUiState by mutableStateOf<PostListUiState>(PostListUiState.Loading)
@@ -42,12 +42,34 @@ class PostViewModel @Inject constructor(
     var isUploading by mutableStateOf(false)
         private set
 
+    init {
+        loadDraft()
+    }
+
+    private fun loadDraft() {
+        viewModelScope.launch {
+            postDraftRepository.getDraft().collectLatest { draft ->
+                postCreateFormState = draft
+            }
+        }
+    }
+
+    private fun saveDraft() {
+        viewModelScope.launch {
+            postDraftRepository.saveDraft(postCreateFormState)
+        }
+    }
+
     fun getPost() {
         viewModelScope.launch {
             postListUiState = PostListUiState.Loading
             runCatching {
                 postLocalDataSource.getPosts()
             }.onSuccess { posts ->
+                val map = favoriteRepository.getFavorites(posts)
+                map.forEach { key, value ->
+                    posts.find { it.id == key }?.isFavorite = value
+                }
                 postListUiState = PostListUiState.Success(posts)
             }.onFailure { error ->
                 postListUiState = PostListUiState.Error(
@@ -113,6 +135,7 @@ class PostViewModel @Inject constructor(
                 )
             }.onSuccess { post ->
                 postCreateUiState = PostCreateUiState.Success(post)
+                postDraftRepository.clearDraft()
                 getPost()
             }.onFailure { error ->
                 postCreateUiState = PostCreateUiState.Error(error.message ?: "게시글 작성에 실패했습니다")
@@ -129,7 +152,7 @@ class PostViewModel @Inject constructor(
                 postLocalDataSource.updatePost(
                     postId = postId,
                     request = PostCreateRequest(
-                        title = postEditFormState.title,      // postEditFormState 사용!
+                        title = postEditFormState.title,
                         content = postEditFormState.content,
                         imageUrl = postEditFormState.selectedImageUri ?: postEditFormState.originalImageUrl
                     )
@@ -157,6 +180,12 @@ class PostViewModel @Inject constructor(
             }
         }
     }
+    fun onFavoriteClick(postId : Long){
+        viewModelScope.launch {
+            favoriteRepository.setFavorite(postId)
+            getPost()
+        }
+    }
     fun onEditTitleChange(title: String) {
         postEditFormState = postEditFormState.copy(title = title)
     }
@@ -170,13 +199,16 @@ class PostViewModel @Inject constructor(
     }
     fun onCreateTitleChange(title: String) {
         postCreateFormState = postCreateFormState.copy(title = title)
+        saveDraft()
     }
     fun onCreateAuthorChange(author: String) {
         postCreateFormState = postCreateFormState.copy(author = author)
+        saveDraft()
     }
 
     fun onCreateContentChange(content: String) {
         postCreateFormState = postCreateFormState.copy(content = content)
+        saveDraft()
     }
 
 }
