@@ -1,6 +1,9 @@
 package com.example.kuit7th_api_practice.ui.navigation
 
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,6 +12,7 @@ import com.example.kuit7th_api_practice.ui.post.screen.PostCreateScreen
 import com.example.kuit7th_api_practice.ui.post.screen.PostDetailScreen
 import com.example.kuit7th_api_practice.ui.post.screen.PostEditScreen
 import com.example.kuit7th_api_practice.ui.post.screen.PostListScreen
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @Composable
 fun NavGraph(
@@ -17,6 +21,9 @@ fun NavGraph(
 ) {
     // TODO: 공용 PostViewModel을 만들기
     // 각 Screen에 같은 ViewModel 인스턴스를 전달해보세요
+    val activity= LocalContext.current as ComponentActivity//현재화면의 context를 Activity로 바꿔 activity에 전달
+    val postViewModel: PostViewModel =hiltViewModel(activity)
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -28,7 +35,8 @@ fun NavGraph(
                 },
                 onCreatePostClick = {
                     navController.navigate(PostCreateRoute)
-                }
+                },
+                viewModel=postViewModel
             )
         }
 
@@ -40,14 +48,16 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onEditClick = { postId ->
                     navController.navigate(PostEditRoute(postId))
-                }
+                },
+                viewModel=postViewModel
             )
         }
 
         composable<PostCreateRoute> {
             PostCreateScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onPostCreated = { navController.popBackStack() }
+                onPostCreated = { navController.popBackStack() },
+                viewModel=postViewModel
             )
         }
 
@@ -57,7 +67,8 @@ fun NavGraph(
             PostEditScreen(
                 postId = route.postId,
                 onNavigateBack = { navController.popBackStack() },
-                onPostUpdated = { navController.popBackStack() }
+                onPostUpdated = { navController.popBackStack() },
+                viewModel=postViewModel
             )
         }
     }

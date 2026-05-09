@@ -12,7 +12,7 @@ import com.example.kuit7th_api_practice.ui.navigation.NavGraph
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
+@AndroidEntryPoint      //hilt를 통해 객체를 주입 받을수 있게 함
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
