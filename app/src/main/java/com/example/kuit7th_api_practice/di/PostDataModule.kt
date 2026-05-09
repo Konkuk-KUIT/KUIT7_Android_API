@@ -2,6 +2,10 @@
 
 import com.example.kuit7th_api_practice.data.mock.InMemoryMockPostDataSource
 import com.example.kuit7th_api_practice.data.mock.PostLocalDataSource
+import com.example.kuit7th_api_practice.data.repository.FavoriteRepository
+import com.example.kuit7th_api_practice.data.repository.PostDraftRepository
+import com.example.kuit7th_api_practice.data.repositoryimpl.FavoriteRepositoryimpl
+import com.example.kuit7th_api_practice.data.repositoryimpl.PostDraftRepositoryimpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -17,4 +21,16 @@ abstract class PostDataModule {
     abstract fun bindPostLocalDataSource(
         dataSource: InMemoryMockPostDataSource
     ): PostLocalDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindFavoriteRepository(
+        favoriteRepository: FavoriteRepositoryimpl
+    ): FavoriteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPostDraftRepository(
+        postDraftRepository: PostDraftRepositoryimpl
+    ): PostDraftRepository
 }
