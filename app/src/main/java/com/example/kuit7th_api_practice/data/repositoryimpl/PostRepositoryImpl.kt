@@ -39,7 +39,7 @@ class PostRepositoryImpl @Inject constructor(
                 body = body,
                 userId = userId
             )
-        ).toDomain()
+        ).toDomain(fallbackId = id)
 
     override suspend fun deletePost(id: Int) {
         postService.deletePost(id)

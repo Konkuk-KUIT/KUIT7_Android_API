@@ -267,6 +267,7 @@ class PostViewModel @Inject constructor(
         val localCreatedPosts = createdPosts.values
             .filterNot { deletedPostIds.contains(it.id) }
             .filter { userId == null || it.userId == userId }
+            .map { post -> updatedPosts[post.id] ?: post }
 
         return (localCreatedPosts + serverPosts)
             .distinctBy { it.id }
