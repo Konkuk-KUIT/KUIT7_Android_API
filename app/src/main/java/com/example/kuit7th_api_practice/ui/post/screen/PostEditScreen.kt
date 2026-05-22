@@ -1,5 +1,6 @@
 package com.example.kuit7th_api_practice.ui.post.screen
 
+import android.R.attr.enabled
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,19 +15,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuDefaults.outlinedTextFieldColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kuit7th_api_practice.ui.post.state.PostEvent
 import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,17 +45,34 @@ fun PostEditScreen(
     onPostUpdated: () -> Unit,
     viewModel: PostViewModel
 ) {
+    val snackbarHostState = remember{ SnackbarHostState() }
     LaunchedEffect(postId) {
         viewModel.getPostDetail(postId)
         // TODO 8주차 미션: 수정 성공 이벤트를 구독해서 뒤로가기 또는 Snackbar를 처리하기
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect{ event->
+            when(event){
+                PostEvent.NavigateBack->onPostUpdated()
+                is PostEvent.ShowSnackbar->snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
     // TODO 8주차 미션: 수정 폼 상태를 화면 상태 스트림으로 관찰하는 구조로 바꿔보기
+    /*
     val title = viewModel.postEditFormState.title
     val body = viewModel.postEditFormState.body
     val isUploading = viewModel.isUploading
+    */
+    val formState by viewModel.postEditFormState.collectAsStateWithLifecycle()
+    val isUploading by viewModel.isUploading.collectAsStateWithLifecycle()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -73,7 +98,7 @@ fun PostEditScreen(
                 .padding(20.dp)
         ) {
             OutlinedTextField(
-                value = title,
+                value = formState.title,
                 onValueChange = { viewModel.onUpdateEditTitle(it) },
                 label = { Text("Title") },
                 modifier = Modifier.fillMaxWidth(),
@@ -85,7 +110,7 @@ fun PostEditScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = body,
+                value = formState.body,
                 onValueChange = { viewModel.onUpdateEditContent(it) },
                 label = { Text("Body") },
                 modifier = Modifier
@@ -100,15 +125,14 @@ fun PostEditScreen(
 
             Button(
                 onClick = {
-                    viewModel.updatePost(postId) {
-                        // TODO 8주차 미션: 수정 성공 콜백을 1회성 이벤트 흐름으로 대체하기
-                        onPostUpdated()
-                    }
+                    viewModel.updatePost(postId)
+                    // TODO 8주차 미션: 수정 성공 콜백을 1회성 이벤트 흐름으로 대체하기
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = title.isNotBlank() && body.isNotBlank() && !isUploading,
+                enabled = formState.title.isNotBlank() && formState.body.isNotBlank() && !isUploading,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
