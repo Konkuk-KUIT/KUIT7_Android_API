@@ -54,7 +54,6 @@ fun NavGraph(
         composable<PostCreateRoute> {
             PostCreateScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onPostCreated = { navController.popBackStack() },
                 viewModel = postViewModel
             )
         }
@@ -65,7 +64,6 @@ fun NavGraph(
             PostEditScreen(
                 postId = route.postId,
                 onNavigateBack = { navController.popBackStack() },
-                onPostUpdated = { navController.popBackStack() },
                 viewModel = postViewModel
             )
         }

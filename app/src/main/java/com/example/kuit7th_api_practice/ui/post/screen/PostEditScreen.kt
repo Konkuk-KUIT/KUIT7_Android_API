@@ -20,13 +20,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kuit7th_api_practice.ui.post.state.PostEvent
 import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,18 +41,29 @@ import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 fun PostEditScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onPostUpdated: () -> Unit,
     viewModel: PostViewModel
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(postId) {
         viewModel.getPostDetail(postId)
-        // TODO 8주차 미션: 수정 성공 이벤트를 구독해서 뒤로가기 또는 Snackbar를 처리하기
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is PostEvent.NavigateBack -> onNavigateBack()
+                is PostEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        }
     }
 
-    // TODO 8주차 미션: 수정 폼 상태를 화면 상태 스트림으로 관찰하는 구조로 바꿔보기
-    val title = viewModel.postEditFormState.title
-    val body = viewModel.postEditFormState.body
-    val isUploading = viewModel.isUploading
+    val postEditFormState by viewModel.postEditFormState.collectAsStateWithLifecycle()
+    val isUpdating by viewModel.isUploading.collectAsStateWithLifecycle()
+
+    val title = postEditFormState.title
+    val body = postEditFormState.body
 
     Scaffold(
         topBar = {
@@ -62,7 +80,8 @@ fun PostEditScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -100,15 +119,12 @@ fun PostEditScreen(
 
             Button(
                 onClick = {
-                    viewModel.updatePost(postId) {
-                        // TODO 8주차 미션: 수정 성공 콜백을 1회성 이벤트 흐름으로 대체하기
-                        onPostUpdated()
-                    }
+                    viewModel.updatePost(postId)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = title.isNotBlank() && body.isNotBlank() && !isUploading,
+                enabled = title.isNotBlank() && body.isNotBlank() && !isUpdating,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(

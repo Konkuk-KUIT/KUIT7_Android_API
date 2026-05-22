@@ -21,27 +21,51 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kuit7th_api_practice.ui.post.state.PostEvent
 import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostCreateScreen(
     onNavigateBack: () -> Unit,
-    onPostCreated: () -> Unit,
     viewModel: PostViewModel
 ) {
-    // TODO 8주차 실습: 작성 폼 상태를 화면 상태 스트림으로 관찰하는 구조로 바꿔보기
-    val userId = viewModel.postCreateFormState.author
-    val title = viewModel.postCreateFormState.title
-    val body = viewModel.postCreateFormState.content
-    val isUploading = viewModel.isUploading
+    val postCreateFormState by viewModel.postCreateFormState.collectAsStateWithLifecycle()
+    val isUploading by viewModel.isUploading.collectAsStateWithLifecycle()
+
+    val userId = postCreateFormState.author
+    val title = postCreateFormState.title
+    val body = postCreateFormState.content
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is PostEvent.NavigateBack -> onNavigateBack()
+                is PostEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -61,7 +85,8 @@ fun PostCreateScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -112,10 +137,7 @@ fun PostCreateScreen(
 
             Button(
                 onClick = {
-                    viewModel.createPost {
-                        // TODO 8주차 실습: 작성 성공 콜백을 1회성 이벤트 흐름으로 대체하기
-                        onPostCreated()
-                    }
+                    viewModel.createPost()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
