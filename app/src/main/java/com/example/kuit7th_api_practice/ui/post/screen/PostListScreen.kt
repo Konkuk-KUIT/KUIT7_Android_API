@@ -19,22 +19,32 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kuit7th_api_practice.ui.post.component.PostItem
-import com.example.kuit7th_api_practice.ui.post.state.PostListUiState
-import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
+import com.example.kuit7th_api_practice.ui.post.state.PostUiState
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostListScreen(
     onPostClick: (Long) -> Unit,
-    onCreatePostClick: () -> Unit
+    onCreatePostClick: () -> Unit,
+    viewModel: PostViewModel
 ) {
-    // TODO: 실습에서 이 샘플 상태를 ViewModel의 uiState로 교체
-    val uiState: PostListUiState = PostListUiState.Success(PostPracticeSampleData.posts)
+    // TODO 8주차 실습: ViewModel의 화면 상태 스트림을 collect해서 Compose State로 변환하기
+    // TODO 8주차 실습: 상태가 바뀌면 아래 when 구문이 자동으로 다시 그려지는지 확인하기
+   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+
+    LaunchedEffect(Unit) {
+        // TODO 8주차 실습: 화면 진입 시 Producer에서 시작된 데이터 흐름을 ViewModel에서 수집하기
+        viewModel.fetchPosts()
+    }
 
     Scaffold(
         topBar = {
@@ -48,8 +58,9 @@ fun PostListScreen(
             }
         }
     ) { paddingValues ->
-        when (uiState) {
-            is PostListUiState.Loading -> {
+        when (val state = uiState) {
+            is PostUiState.Idle,
+            is PostUiState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -60,18 +71,18 @@ fun PostListScreen(
                 }
             }
 
-            is PostListUiState.Error -> {
+            is PostUiState.Error -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = uiState.message)
+                    Text(text = state.message)
                 }
             }
 
-            is PostListUiState.Success -> {
+            is PostUiState.Success -> {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -80,25 +91,14 @@ fun PostListScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(uiState.posts, key = { it.id }) { post ->
+                    items(state.posts, key = { it.id }) { post ->
                         PostItem(
                             post = post,
-                            onClick = { onPostClick(post.id) }
+                            onClick = { onPostClick(post.id.toLong()) }
                         )
                     }
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostListScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostListScreen(
-            onPostClick = {},
-            onCreatePostClick = {}
-        )
     }
 }

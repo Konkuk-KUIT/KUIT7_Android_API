@@ -1,6 +1,7 @@
 ﻿package com.example.kuit7th_api_practice.ui.post.component
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,18 +23,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.example.kuit7th_api_practice.data.model.response.PostResponse
-import com.example.kuit7th_api_practice.util.formatDateTime
+import com.example.kuit7th_api_practice.domain.repository.model.Post
 
 @Composable
 fun PostItem(
-    post: PostResponse,
+    post: Post,
     onClick: () -> Unit
 ) {
     Card(
@@ -48,21 +45,15 @@ fun PostItem(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (post.author.profileImageUrl != null) {
-                    AsyncImage(
-                        model = post.author.profileImageUrl,
-                        contentDescription = "profile",
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                ) {
                     Surface(
                         modifier = Modifier.size(44.dp),
                         shape = CircleShape,
@@ -75,34 +66,23 @@ fun PostItem(
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier) {
+                        Text(
+                            text = "User ${post.userId}",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Post #${post.id}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.author.username,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = formatDateTime(post.createdAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            post.imageUrl?.let { imageUrl ->
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    contentScale = ContentScale.Crop
-                )
             }
 
             Column(
@@ -119,7 +99,7 @@ fun PostItem(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = post.content,
+                    text = post.body,
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
