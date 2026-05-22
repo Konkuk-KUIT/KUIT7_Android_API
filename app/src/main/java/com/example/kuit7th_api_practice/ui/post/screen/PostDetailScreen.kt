@@ -8,12 +8,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,37 +23,53 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
-import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
-import com.example.kuit7th_api_practice.util.formatDateTime
+import com.example.kuit7th_api_practice.ui.post.state.PostEvent
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onEditClick: (Long) -> Unit
+    onEditClick: (Long) -> Unit,
+    viewModel: PostViewModel
 ) {
-    // TODO: 실습에서 ViewModel의 상세 상태로 교체
-    val uiState: PostDetailUiState = PostDetailUiState.Success(PostPracticeSampleData.findPost(postId))
+    // 상세 화면 상태를 StateFlow 로 구독
+    val uiState by viewModel.postDetailUiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(postId) {
+        viewModel.getPostDetail(postId)
+    }
+
+    // 삭제 성공/실패 이벤트 구독
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                PostEvent.NavigateBack -> onNavigateBack()
+                is PostEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -65,21 +77,22 @@ fun PostDetailScreen(
                 title = { Text("게시글 상세") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로 가기")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     IconButton(onClick = { onEditClick(postId) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "수정")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "삭제")
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        when (uiState) {
+        when (val state = uiState) {
             is PostDetailUiState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -98,12 +111,12 @@ fun PostDetailScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = uiState.message)
+                    Text(text = state.message)
                 }
             }
 
             is PostDetailUiState.Success -> {
-                val post = uiState.post
+                val post = state.post
 
                 Column(
                     modifier = Modifier
@@ -122,57 +135,26 @@ fun PostDetailScreen(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            if (post.author.profileImageUrl != null) {
-                                AsyncImage(
-                                    model = post.author.profileImageUrl,
-                                    contentDescription = "프로필 이미지",
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Surface(
-                                    modifier = Modifier.size(44.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primaryContainer
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = "기본 프로필",
-                                        modifier = Modifier.padding(10.dp),
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
 
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column {
+                            Column(modifier = Modifier.padding(start = 12.dp)) {
                                 Text(
-                                    text = post.author.username,
+                                    text = "User ${post.userId}",
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 )
                                 Text(
-                                    text = formatDateTime(post.createdAt),
+                                    text = "Post #${post.id}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                    }
-
-                    post.imageUrl?.let { imageUrl ->
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = "게시글 이미지",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 400.dp),
-                            contentScale = ContentScale.Fit
-                        )
                     }
 
                     Column(modifier = Modifier.padding(20.dp)) {
@@ -186,7 +168,7 @@ fun PostDetailScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            text = post.content,
+                            text = post.body,
                             style = MaterialTheme.typography.bodyLarge,
                             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
                         )
@@ -199,36 +181,24 @@ fun PostDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("게시글 삭제") },
-            text = { Text("정말로 이 게시글을 삭제하시겠습니까?") },
+            title = { Text("Delete Post") },
+            text = { Text("Delete this post?") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: deletePost()와 연결
                         showDeleteDialog = false
-                        onNavigateBack()
+                        // 삭제 성공/실패는 eventFlow 이벤트로 처리
+                        viewModel.deletePost(postId)
                     }
                 ) {
-                    Text("삭제")
+                    Text("Delete")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("취소")
+                    Text("Cancel")
                 }
             }
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostDetailScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostDetailScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onEditClick = {}
         )
     }
 }
